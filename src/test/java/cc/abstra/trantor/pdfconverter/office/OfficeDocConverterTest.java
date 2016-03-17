@@ -18,7 +18,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,6 +55,7 @@ public class OfficeDocConverterTest {
     @Before
     public void setUp() throws URISyntaxException {
         this.tempDir = com.google.common.io.Files.createTempDir();
+        System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
         
         URL docFilesUrl = this.getClass().getResource("/office-files/doc");
         this.docOfficeFiles = Arrays.asList(new File(docFilesUrl.toURI()).listFiles());

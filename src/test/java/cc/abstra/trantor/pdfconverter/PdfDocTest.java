@@ -1,6 +1,6 @@
 package cc.abstra.trantor.pdfconverter;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -20,6 +20,7 @@ public class PdfDocTest {
         // http://www.pdfa.org/2011/08/download-isartor-test-suite/ and
         // http://www.pdflib.com/knowledge-base/pdfa/validation-report/
         // b/c the their license does not allow redistribution
+        System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
         URL conformingUrl = this.getClass().getResource("/pdf-files/PDFA-1b/conforming");
         URL nonConformingUrl = this.getClass().getResource("/pdf-files/PDFA-1b/nonconforming");
 
@@ -31,13 +32,11 @@ public class PdfDocTest {
     public void testPDFA1bCompliance() throws Exception {
 
         for (File f : nonConformingPdfFiles) {
-            boolean falseResult = PdfDoc.isPDFA1bCompliant(f.getAbsolutePath());
-            Assert.assertFalse(falseResult);
+            Assert.assertEquals("Nonconforming file Name: " + f.getAbsolutePath(), false, PdfDoc.isPDFA1bCompliant(f.getAbsolutePath()));
         }
 
         for (File f : conformingPdfFiles) {
-            boolean trueResult = PdfDoc.isPDFA1bCompliant(f.getAbsolutePath());
-            Assert.assertTrue(trueResult);
+            Assert.assertEquals("Conforming file Name: " + f.getAbsolutePath(), true, PdfDoc.isPDFA1bCompliant(f.getAbsolutePath()));
         }
 
     }

@@ -8,24 +8,24 @@ import java.util.logging.Logger;
 import org.artofsolving.jodconverter.office.DefaultOfficeManagerConfiguration;
 import org.artofsolving.jodconverter.office.OfficeManager;
 
-
 public class OpenOfficeService {
 
     private static OfficeManager officeManager = null; //Couldn't make NullObject b/c of poor OfficeManager declaration
 
     public static void initialize(List<Long> listenAtPorts) {
-        if(null == officeManager) {
+        if (null == officeManager) {
             OpenOfficeConfig.setPorts(listenAtPorts);
             int[] ports = OpenOfficeConfig.getPorts();
 
             Logger.getLogger(OpenOfficeService.class.getName()).log(Level.INFO,
-                    "Initializing OfficeManager in ports: "+Arrays.toString(ports));
+                    "Initializing OfficeManager in ports: " + Arrays.toString(ports));
 
             //OS X: cd /Applications/LibreOffice.app/Contents/MacOS/
             //      sudo ln -s ./soffice soffice.bin
             // FIXED in master:
             //   https://github.com/nuxeo/jodconverter/commit/30eb0644a217081ce936a866ac6be411c62c6f49
             officeManager = new DefaultOfficeManagerConfiguration().
+                    setOfficeHome("C:\\Program Files (x86)\\LibreOffice 5").
                     setPortNumbers(ports).
                     buildOfficeManager();
         } else {
@@ -46,7 +46,7 @@ public class OpenOfficeService {
         logElapsedTime(startTime, "Stopped");
     }
 
-    public static OfficeManager getOfficeManager(){
+    public static OfficeManager getOfficeManager() {
         return officeManager;
     }
 
