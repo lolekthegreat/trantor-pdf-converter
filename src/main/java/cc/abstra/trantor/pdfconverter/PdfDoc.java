@@ -4,7 +4,6 @@ package cc.abstra.trantor.pdfconverter;
  *
  * @author nando
  */
-
 import org.apache.pdfbox.pdfparser.PDFStreamParser;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -29,12 +28,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class PdfDoc {
+
+    public static final Logger LOGGER = Logger.getLogger(PdfDoc.class.getName());
     public static final float PDFBOX_DEFAULT_USER_SPACE_UNIT_DPI = 72.0f;
 
     //TODO: isSigned: See http://blog.javabien.net/2009/05/01/pdfbox-to-unit-test-pdf-files/
-
-    static boolean isPDFA1bCompliant(String pdf){
+    static boolean isPDFA1bCompliant(String pdf) {
         ValidationResult result = null;
+        LOGGER.log(Level.INFO, "Pdf file: {0}", pdf);
         FileDataSource fd = new FileDataSource(pdf);
         try {
             PreflightParser parser = new PreflightParser(fd);
@@ -49,24 +50,24 @@ public class PdfDoc {
             result = ex.getResult();
 
         } catch (IOException ex) {
-            Logger.getLogger(PdfDoc.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         } catch (NullPointerException ex) {
-            Logger.getLogger(PdfDoc.class.getName()).log(Level.INFO, "There was an error validating "+pdf+
-                    "\nValidation marked as failing"+
-                    "\nPlease create a ticket at " +
-                    "https://issues.apache.org/jira/browse/PDFBOX/component/12315215 and paste the exception and "+
-                    "the output from http://www.pdf-tools.com/pdf/validate-pdfa-online.aspx", ex);
+            LOGGER.log(Level.SEVERE, "There was an error validating " + pdf
+                    + "\nValidation marked as failing"
+                    + "\nPlease create a ticket at "
+                    + "https://issues.apache.org/jira/browse/PDFBOX/component/12315215 and paste the exception and "
+                    + "the output from http://www.pdf-tools.com/pdf/validate-pdfa-online.aspx", ex);
             return false;
         }
 
         assert result != null;
         if (result.isValid()) {
-            Logger.getLogger(PdfDoc.class.getName()).log(Level.INFO, "The file " + pdf + " is a valid PDF/A-1b file");
+            LOGGER.log(Level.INFO, "The file {0} is a valid PDF/A-1b file", pdf);
             return true;
         } else {
-            Logger.getLogger(PdfDoc.class.getName()).log(Level.INFO, "The file" + pdf + " is not valid, error(s) :");
+            LOGGER.log(Level.INFO, "The file {0} is not valid, error(s) :", pdf);
             for (ValidationResult.ValidationError error : result.getErrorsList()) {
-                Logger.getLogger(PdfDoc.class.getName()).log(Level.INFO, error.getErrorCode() + " : " + error.getDetails());
+                LOGGER.log(Level.INFO, "{0} : {1}", new Object[]{error.getErrorCode(), error.getDetails()});
             }
             return false;
         }
@@ -81,12 +82,12 @@ public class PdfDoc {
 
             List pdPages = pdDoc.getDocumentCatalog().getAllPages();
             ListIterator pageIter = pdPages.listIterator();
-            PDPage firstPage = (PDPage)pageIter.next();
+            PDPage firstPage = (PDPage) pageIter.next();
             BufferedImage img = firstPage.convertToImage(BufferedImage.TYPE_INT_RGB, Consts.PREVIEW_DPI);
             ImageIO.write(img, Consts.PNG, new File(output));
 
         } catch (Exception ex) {
-            Logger.getLogger(PdfDoc.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         } finally {
             if (null != pdDoc) {
                 pdDoc.close();
@@ -104,13 +105,12 @@ public class PdfDoc {
             List pdPages = pdDoc.getDocumentCatalog().getAllPages();
             for (Object pdPage : pdPages) {
                 Map<String, Object> pageInfo = new LinkedHashMap<>();
-                PDPage currentPage = (PDPage)pdPage;
+                PDPage currentPage = (PDPage) pdPage;
 
                 BufferedImage img = currentPage.convertToImage(BufferedImage.TYPE_INT_RGB, Consts.PREVIEW_DPI);
-                float scaleDownFactor = Consts.PREVIEW_DPI/PDFBOX_DEFAULT_USER_SPACE_UNIT_DPI;  //required by PDFBox.convertToImage()
+                float scaleDownFactor = Consts.PREVIEW_DPI / PDFBOX_DEFAULT_USER_SPACE_UNIT_DPI;  //required by PDFBox.convertToImage()
 
                 //TODO Subclass org.apache.pdfbox.pdfviewer.PageDrawer if there's too much antialiasing
-
                 pageInfo.put(Consts.IMAGE_KEY, ImageHelper.resizeImageToDINA4WithDPI(img, Consts.PREVIEW_DPI, scaleDownFactor));
 
                 pageInfo.put(Consts.PAGE_SIZE_KEY, PDPage.PAGE_SIZE_A4);  //default preview size
@@ -121,7 +121,7 @@ public class PdfDoc {
             writePageListToPdf(pageList, output);
 
         } catch (Exception ex) {
-            Logger.getLogger(PdfDoc.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         } finally {
             if (null != pdDoc) {
                 pdDoc.close();
@@ -147,22 +147,22 @@ public class PdfDoc {
                 if (imgKey instanceof BufferedImage) {
                     BufferedImage bi = (BufferedImage) imgKey;
 
-                    PDRectangle pageSize = (PDRectangle)image.get(Consts.PAGE_SIZE_KEY);
+                    PDRectangle pageSize = (PDRectangle) image.get(Consts.PAGE_SIZE_KEY);
                     page = new PDPage(pageSize);
                     page.setMediaBox(pageSize);
 
                     ximage = new PDPixelMap(pdDoc, bi);  //embeds PNG image
 
                     double vOffset, hOffset;
-                    if ((boolean)image.get(Consts.LANDSCAPE_KEY)){
+                    if ((boolean) image.get(Consts.LANDSCAPE_KEY)) {
                         float pageWidth = pageSize.getWidth();
                         page.setRotation(90);
                         contentStream = new PDPageContentStream(pdDoc, page);
                         contentStream.concatenate2CTM(0, 1, -1, 0, pageWidth, 0);
                         vOffset = 0;
-                        hOffset = ((Consts.A4_W_INCHES * Consts.INCH_TO_POINT) - ximage.getWidth())/2.0;
+                        hOffset = ((Consts.A4_W_INCHES * Consts.INCH_TO_POINT) - ximage.getWidth()) / 2.0;
                     } else {
-                        vOffset = ((Consts.A4_H_INCHES * Consts.INCH_TO_POINT) - ximage.getHeight())/2.0;
+                        vOffset = ((Consts.A4_H_INCHES * Consts.INCH_TO_POINT) - ximage.getHeight()) / 2.0;
                         hOffset = 0;
                         contentStream = new PDPageContentStream(pdDoc, page);
                     }
@@ -172,12 +172,10 @@ public class PdfDoc {
                     contentStream.close();
                     bi.flush();
 
+                } else if (imgKey instanceof PDPage) {
+                    page = (PDPage) imgKey;
                 } else {
-                    if (imgKey instanceof PDPage) {
-                        page = (PDPage) imgKey;
-                    } else {
-                        throw new Exception("Unrecognized object found in 'img' value: " + imgKey.getClass().getName());
-                    }
+                    throw new Exception("Unrecognized object found in 'img' value: " + imgKey.getClass().getName());
                 }
 
                 pdDoc.addPage(page);
@@ -186,7 +184,7 @@ public class PdfDoc {
             pdDoc.save(output);
 
         } catch (Exception ex) {
-            Logger.getLogger(PdfDoc.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         } finally {
             if (null != pdDoc) {
                 pdDoc.close();
@@ -213,7 +211,6 @@ public class PdfDoc {
         return false;
     }
 
-
     //TODO: PDF Metadata: http://www.docjar.com/html/api/org/apache/pdfbox/examples/pdmodel/ExtractMetadata.java.html
     private static boolean checkVersion(String requiredVersion, String file) throws IOException {
         PDDocument document = null;
@@ -223,12 +220,15 @@ public class PdfDoc {
             // some pdf-documents are broken and the pdf-version is in the headers and
             // not in the metadata section. See: pdfbox/pdfparser/PDFParser.java
             String version = Float.toString(document.getDocument().getVersion());
-            Logger.getLogger(PdfDoc.class.getName()).log(Level.INFO, "The file" + file + " has version: "+ version);
-            if(version.equals(requiredVersion))  // gte
+            LOGGER.log(Level.INFO, "The file" + file + " has version: " + version);
+            if (version.equals(requiredVersion)) // gte
+            {
                 res = true;
+            }
         } finally {
-            if(document != null)
+            if (document != null) {
                 document.close();
+            }
         }
 
         return res;
